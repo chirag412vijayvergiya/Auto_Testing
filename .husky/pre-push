@@ -1,4 +1,18 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+# #!/bin/sh
+# . "$(dirname "$0")/_/husky.sh"
 
-npm test
+# npm test
+
+#!/bin/sh
+
+echo "Running tests before pushing..."
+npm install  # Ensure dependencies are installed
+npm test     # Run tests
+
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed! Push aborted."
+  exit 1
+fi
+
+echo "✅ Tests passed! Proceeding with push."
+exit 0
