@@ -43,7 +43,7 @@ name: Run Tests on Push and PR
 on:
   push:
     branches:
-      - main  # Run workflow on every push to main branch
+      - '**'  # ✅ Runs on all branches
   pull_request:
     branches:
       - main  # Also run workflow on pull requests targeting main
