@@ -4,8 +4,9 @@
 # npm test
 
 #!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
 
-echo "Running tests before pushing..."
+echo "🔍 Running tests before pushing..."
 npm install  # Ensure dependencies are installed
 npm test     # Run tests
 
