@@ -6,9 +6,9 @@ exports.createUser = async (req, res) => {
     try {
         const { name, email } = req.body;
 
-        // if (!name || !email) {
-        //     return res.status(400).json({ error: "Name and email are required" });
-        // }
+        if (!name || !email) {
+            return res.status(400).json({ error: "Name and email are required" });
+        }
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
