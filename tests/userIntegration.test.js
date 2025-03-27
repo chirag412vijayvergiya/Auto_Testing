@@ -55,6 +55,7 @@ test('GET /api/users/:id should return 400 for invalid ID', async () => {
 });
 
 // ✅ FIXED: Properly Handle Non-Existent User
+
 test('GET /api/users/:id should return 404 if user does not exist', async () => {
     const fakeId = new mongoose.Types.ObjectId(); // Generate a valid but non-existent ID
 
