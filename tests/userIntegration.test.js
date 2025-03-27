@@ -48,7 +48,6 @@ test('GET /api/users/:id should return a user', async () => {
     expect(response.body.name).toBe('David');
 });
 
-// ✅ FIXED: Properly Handle Invalid ID Format
 test('GET /api/users/:id should return 400 for invalid ID', async () => {
     const response = await request(app).get('/api/users/invalidID');
     expect(response.status).toBe(400);
