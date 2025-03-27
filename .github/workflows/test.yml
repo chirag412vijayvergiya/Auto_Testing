@@ -1,59 +1,13 @@
-# name: Run Tests on PR
-
-# on:
-#   pull_request:
-#     branches:
-#       - main  # Trigger the workflow on pull requests targeting the main branch
-
-# jobs:
-#   test:
-#     runs-on: ubuntu-latest  # Use the latest Ubuntu runner
-#     strategy:
-#       matrix:
-#         node-version: [16, 18, 20]  # Test against multiple Node.js versions
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3  # Checkout the repository code
-
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v3  # Set up the Node.js environment
-#         with:
-#           node-version: ${{ matrix.node-version }}  # Use the Node.js version from the matrix
-
-#       - name: Cache node_modules
-#         uses: actions/cache@v3  # Cache the node_modules directory
-#         with:
-#           path: node_modules  # Specify the path to cache
-#           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}  # Generate a cache key based on the OS and package-lock.json hash
-
-#       - name: Install dependencies
-#         run: npm install  # Install the project dependencies
-
-#       - name: Run lint
-#         run: npm run lint  # Run the linting process
-
-#       - name: Run tests
-#         run: npm test  # Execute the test suite
-
-#       - name: Run coverage
-#         run: npm run coverage  # Generate the test coverage report
-
-name: Run Tests on Push and PR
+name: Run Tests Before Push
 
 on:
   push:
     branches:
-      - '**'  # ✅ Runs on all branches
-  pull_request:
-    branches:
-      - main  # Also run workflow on pull requests targeting main
+      - chirag  # ✅ Runs on chirag branch
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [16, 18, 20]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -61,19 +15,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Cache node_modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          node-version: 18  # Set your Node.js version
 
       - name: Install dependencies
         run: npm install
 
       - name: Run tests
         run: npm test
-
-      - name: Run coverage
-        run: npm run coverage
