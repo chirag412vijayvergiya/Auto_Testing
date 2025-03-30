@@ -75,19 +75,55 @@
 #       - name: Run coverage
 #         run: npm run coverage
 
-name: Run Tests on Push
+# name: Run Tests on Push
+
+# on:
+#   push:
+#     branches:
+#       - '**'  # ✅ Runs on all branches when pushed
+
+# jobs:
+#   test:
+#     runs-on: ubuntu-latest
+#     strategy:
+#       matrix:
+#         node-version: [16, 18, 20]
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: ${{ matrix.node-version }}
+
+#       - name: Cache node_modules
+#         uses: actions/cache@v3
+#         with:
+#           path: node_modules
+#           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+#           restore-keys: |
+#             ${{ runner.os }}-node-
+
+#       - name: Install dependencies
+#         run: npm install
+
+#       - name: Run tests
+#         run: npm test
+
+#       - name: Run coverage
+#         run: npm run coverage  # ✅ Fixed syntax
+
+name: Run Tests on Push and PR
 
 on:
-  push:
+  pull_request:
     branches:
-      - '**'  # ✅ Runs on all branches when pushed
+      - 'main'  # ✅ Runs tests when a PR is created for `main`
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [16, 18, 20]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -95,15 +131,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Cache node_modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          node-version: 18
 
       - name: Install dependencies
         run: npm install
@@ -111,5 +139,12 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Run coverage
-        run: npm run coverage  # ✅ Fixed syntax
+  close-failed-pr:
+    needs: test
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close PR if tests fail
+        uses: peter-evans/close-pull-request@v3
+        with:
+          comment: "❌ Tests failed. PR is auto-closed. Fix the errors before opening a PR."
