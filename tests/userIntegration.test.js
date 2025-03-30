@@ -25,7 +25,7 @@ test('POST /api/users should create a user', async () => {
     const response = await request(app)
         .post('/api/users')
         .send({ name: 'Alice', email: 'alice@example.com' });
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('_id');
     expect(response.body.name).toBe('Alice');
 });
@@ -34,7 +34,7 @@ test('GET /api/users should return users', async () => {
     await User.create({ name: 'Bob', email: 'bob@example.com' }); // Pre-insert a user
 
     const response = await request(app).get('/api/users');
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(300);
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body.length).toBe(1);
 });
