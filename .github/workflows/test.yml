@@ -114,9 +114,10 @@
 #       - name: Run coverage
 #         run: npm run coverage  # ✅ Fixed syntax
 
-name: Run Tests on Push and PR
+name: Run Tests on PR
 
 on:
+
   pull_request:
     branches:
       - 'main'  # ✅ Runs tests when a PR is created for `main`
