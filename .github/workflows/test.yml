@@ -145,7 +145,7 @@ name: Run Controller Tests
 on:
   pull_request:
     branches:
-      - staging
+      - main
 
 jobs:
   run-tests:
@@ -176,8 +176,8 @@ jobs:
       - name: Get Changed Controller Files
         id: changed-files
         run: |
-          # Use git diff to find changed files in the 'controller/' directory
-          CHANGED_FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.ref }} | grep '^controller/' || echo '')
+          # Use git diff to find changed files in the 'controllers/' directory
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep '^controllers/' || echo '')
 
           if [ -z "$CHANGED_FILES" ]; then
             echo "No changes in controllers. Skipping tests."
@@ -199,10 +199,10 @@ jobs:
             controller_name="${filename%.Controller.js}"
 
             # Get the parent directory to determine test folder, but remove 'Controller' from the directory
-            controller_dir=$(dirname -- "$file" | sed 's#controller/##' | sed 's#Controller##')
-            
+             controller_dir=$(dirname -- "$file" | sed 's#controllers/##' | sed 's#\.Controller##g')
+
             # Construct the test file path
-            test_file="tests/${controller_dir}.tests/${controller_name}.test.js"
+             test_file="tests/${controller_dir}.tests/${controller_name}.test.js"
 
             echo "Controller: $file"
             echo "Test File: $test_file"
