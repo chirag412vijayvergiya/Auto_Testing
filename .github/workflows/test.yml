@@ -145,7 +145,7 @@ name: Run Controller Tests
 on:
   pull_request:
     branches:
-      - staging
+      - main
 
 jobs:
   run-tests:
