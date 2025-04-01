@@ -114,29 +114,127 @@
 #       - name: Run coverage
 #         run: npm run coverage  # ✅ Fixed syntax
 
-name: Run Tests on PR
+# name: Run Tests on PR
+
+# on:
+
+#   pull_request:
+#     branches:
+#       - 'main'  # ✅ Runs tests when a PR is created for `main`
+
+# jobs:
+#   test:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: 18
+
+#       - name: Install dependencies
+#         run: npm install
+
+#       - name: Run tests
+#         run: npm test
+
+name: Run Controller Tests
 
 on:
-
   pull_request:
     branches:
-      - 'main'  # ✅ Runs tests when a PR is created for `main`
+      - staging
 
 jobs:
-  test:
+  run-tests:
     runs-on: ubuntu-latest
+
+    env:
+      USER_X_AUTH_TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2MwMmU0NjYzMzgzMmRlNWIwYzQ3MDYiLCJtb2JpbGVOdW1iZXIiOiI3NzM3MDEyNjUzIiwiaWF0IjoxNzQwOTgyNDU0fQ.lBjFYOcjFtCqu9eHD43eKlWEs280uIbo2HvtUio_s2M
+      USER_BUSINESS_CODE: ALQ358
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
-          node-version: 18
+          fetch-depth: 0  # Ensure full history for git diff
 
-      - name: Install dependencies
+      - name: Fetch all branches and commits
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }} ${{ github.event.pull_request.head.ref }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
         run: npm install
 
-      - name: Run tests
-        run: npm test
+      - name: Get Changed Controller Files
+        id: changed-files
+        run: |
+          # Use git diff to find changed files in the 'controller/' directory
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.ref }} | grep '^controller/' || echo '')
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No changes in controllers. Skipping tests."
+            exit 0
+          fi
+          
+          echo "CHANGED_CONTROLLERS=$CHANGED_FILES" >> $GITHUB_ENV
+
+      - name: Run Tests for Changed Controllers
+        run: |
+          PASS_COUNT=0
+          FAIL_COUNT=0
+          FAILED_TESTS=""
+
+          # Loop over the changed controllers
+          for file in $CHANGED_CONTROLLERS; do
+            # Extract filename and remove .Controller.js extension
+            filename=$(basename -- "$file")
+            controller_name="${filename%.Controller.js}"
+
+            # Get the parent directory to determine test folder, but remove 'Controller' from the directory
+            controller_dir=$(dirname -- "$file" | sed 's#controller/##' | sed 's#Controller##')
+            
+            # Construct the test file path
+            test_file="tests/${controller_dir}.tests/${controller_name}.test.js"
+
+            echo "Controller: $file"
+            echo "Test File: $test_file"
+
+            # Check if the test file exists and run tests
+            if [ -f "$test_file" ]; then
+              echo "Test found for $file, running test for $test_file"
+              npm test "$test_file" -- --silent --json
+              TEST_EXIT_CODE=$?
+              
+              if [ $TEST_EXIT_CODE -eq 0 ]; then
+                PASS_COUNT=$((PASS_COUNT+1))
+                echo "$test_file passed"
+              else
+                FAIL_COUNT=$((FAIL_COUNT+1))
+                FAILED_TESTS="$FAILED_TESTS\n$test_file failed"
+              fi
+            else
+              echo "No test file found for $file"
+            fi
+          done
+
+          # Summary of test results
+          echo "Summary of Tests:"
+          echo "Tests Passed: $PASS_COUNT"
+          echo "Tests Failed: $FAIL_COUNT"
+          
+          if [ $FAIL_COUNT -gt 0 ]; then
+            echo -e "Failed Tests: $FAILED_TESTS"
+            exit 1 # Fail the workflow if tests fail
+          else
+            echo "All tests passed!"
+          fi
+
 
