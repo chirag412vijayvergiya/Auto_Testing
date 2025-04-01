@@ -34,7 +34,7 @@ test('GET /api/users should return users', async () => {
     await User.create({ name: 'Bob', email: 'bob@example.com' }); // Pre-insert a user
 
     const response = await request(app).get('/api/users');
-    expect(response.status).toBe(300);
+    expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body.length).toBe(1);
 });
