@@ -199,7 +199,7 @@ jobs:
             controller_name="${filename%.Controller.js}"
 
             # Get the parent directory to determine test folder, but remove 'Controller' from the directory
-            controller_dir=$(dirname -- "$file" | sed 's#controller/##' | sed 's#Controller##')
+             controller_dir=$(dirname -- "$file" | sed 's#controllers/##' | sed 's#\.Controller##g')
 
             # Construct the test file path
              test_file="tests/${controller_dir}.tests/${controller_name}.test.js"
