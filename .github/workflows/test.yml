@@ -177,7 +177,7 @@ jobs:
         id: changed-files
         run: |
           # Use git diff to find changed files in the 'controller/' directory
-          CHANGED_FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.ref }} | grep '^controller/' || echo '')
+           CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep '^controller/' || echo '')
 
           if [ -z "$CHANGED_FILES" ]; then
             echo "No changes in controllers. Skipping tests."
