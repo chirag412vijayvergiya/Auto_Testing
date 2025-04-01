@@ -202,7 +202,7 @@ jobs:
             controller_dir=$(dirname -- "$file" | sed 's#controller/##' | sed 's#Controller##')
             
             # Construct the test file path
-            test_file="tests/${controller_dir}.tests/${controller_name}.test.js"
+            test_file="tests/.tests/${controller_name}.test.js"
 
             echo "Controller: $file"
             echo "Test File: $test_file"
