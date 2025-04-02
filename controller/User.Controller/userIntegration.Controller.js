@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 exports.createUser = async (req, res) => {
     try {
-        const { name, email } = req.body;   
+        const { name, email } = req.body ;   
 
         if (!name || !email) {
             return res.status(400).json({ error: "Name and email are required" });
