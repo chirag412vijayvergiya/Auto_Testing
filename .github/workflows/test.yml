@@ -140,7 +140,105 @@
 #       - name: Run tests
 #         run: npm test
 
-name: Run Controller Tests
+# name: Run Controller Tests
+
+# on:
+#   pull_request:
+#     branches:
+#       - main
+
+# jobs:
+#   run-tests:
+#     runs-on: ubuntu-latest
+
+#     env:
+#       USER_X_AUTH_TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2MwMmU0NjYzMzgzMmRlNWIwYzQ3MDYiLCJtb2JpbGVOdW1iZXIiOiI3NzM3MDEyNjUzIiwiaWF0IjoxNzQwOTgyNDU0fQ.lBjFYOcjFtCqu9eHD43eKlWEs280uIbo2HvtUio_s2M
+#       USER_BUSINESS_CODE: ALQ358
+
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0  # Ensure full history for git diff
+
+#       - name: Fetch all branches and commits
+#         run: |
+#           git fetch origin ${{ github.event.pull_request.base.ref }} ${{ github.event.pull_request.head.ref }}
+
+#       - name: Install Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+
+#       - name: Install Dependencies
+#         run: npm install
+
+#       - name: Get Changed Controller Files
+#         id: changed-files
+#         run: |
+#           # Use git diff to find changed files in the 'controllers/' directory
+#           CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep '^controllers/' || echo '')
+
+#           if [ -z "$CHANGED_FILES" ]; then
+#             echo "No changes in controllers. Skipping tests."
+#             exit 0
+#           fi
+          
+#           echo "CHANGED_CONTROLLERS=$CHANGED_FILES" >> $GITHUB_ENV
+
+#       - name: Run Tests for Changed Controllers
+#         run: |
+#           PASS_COUNT=0
+#           FAIL_COUNT=0
+#           FAILED_TESTS=""
+
+#           # Loop over the changed controllers
+#           for file in $CHANGED_CONTROLLERS; do
+#             # Extract filename and remove .Controller.js extension
+#             filename=$(basename -- "$file")
+#             controller_name="${filename%.Controller.js}"
+
+#             # Get the parent directory to determine test folder, but remove 'Controller' from the directory
+#              controller_dir=$(dirname -- "$file" | sed 's#controllers/##' | sed 's#\.Controller##g')
+
+#             # Construct the test file path
+#              test_file="tests/${controller_dir}.tests/${controller_name}.test.js"
+
+#             echo "Controller: $file"
+#             echo "Test File: $test_file"
+
+#             # Check if the test file exists and run tests
+#             if [ -f "$test_file" ]; then
+#               echo "Test found for $file, running test for $test_file"
+#               npm test "$test_file" -- --silent --json
+#               TEST_EXIT_CODE=$?
+              
+#               if [ $TEST_EXIT_CODE -eq 0 ]; then
+#                 PASS_COUNT=$((PASS_COUNT+1))
+#                 echo "$test_file passed"
+#               else
+#                 FAIL_COUNT=$((FAIL_COUNT+1))
+#                 FAILED_TESTS="$FAILED_TESTS\n$test_file failed"
+#               fi
+#             else
+#               echo "No test file found for $file"
+#             fi
+#           done
+
+#           # Summary of test results
+#           echo "Summary of Tests:"
+#           echo "Tests Passed: $PASS_COUNT"
+#           echo "Tests Failed: $FAIL_COUNT"
+          
+#           if [ $FAIL_COUNT -gt 0 ]; then
+#             echo -e "Failed Tests: $FAILED_TESTS"
+#             exit 1 # Fail the workflow if tests fail
+#           else
+#             echo "All tests passed!"
+#           fi
+
+
+name: Controller Tests for Pull Requests
 
 on:
   pull_request:
@@ -148,93 +246,163 @@ on:
       - main
 
 jobs:
-  run-tests:
+  test-controllers:
     runs-on: ubuntu-latest
-
+    
     env:
       USER_X_AUTH_TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2MwMmU0NjYzMzgzMmRlNWIwYzQ3MDYiLCJtb2JpbGVOdW1iZXIiOiI3NzM3MDEyNjUzIiwiaWF0IjoxNzQwOTgyNDU0fQ.lBjFYOcjFtCqu9eHD43eKlWEs280uIbo2HvtUio_s2M
       USER_BUSINESS_CODE: ALQ358
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Ensure full history for git diff
+          fetch-depth: 0  # Needed for git diff to work properly
 
-      - name: Fetch all branches and commits
-        run: |
-          git fetch origin ${{ github.event.pull_request.base.ref }} ${{ github.event.pull_request.head.ref }}
-
-      - name: Install Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Get Changed Controller Files
-        id: changed-files
+      - name: Find changed controller files
+        id: get-changed-files
         run: |
-          # Use git diff to find changed files in the 'controllers/' directory
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep '^controllers/' || echo '')
+          # Get the list of changed files in the PR
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep "^controller/.*\.Controller\.js$" || echo "")
 
           if [ -z "$CHANGED_FILES" ]; then
-            echo "No changes in controllers. Skipping tests."
+            echo "No controller files were changed in this PR."
+            echo "SKIP_TESTS=true" >> $GITHUB_ENV
             exit 0
           fi
-          
-          echo "CHANGED_CONTROLLERS=$CHANGED_FILES" >> $GITHUB_ENV
 
-      - name: Run Tests for Changed Controllers
-        run: |
-          PASS_COUNT=0
-          FAIL_COUNT=0
-          FAILED_TESTS=""
+          echo "Changed controller files:"
+          echo "$CHANGED_FILES"
 
-          # Loop over the changed controllers
-          for file in $CHANGED_CONTROLLERS; do
-            # Extract filename and remove .Controller.js extension
-            filename=$(basename -- "$file")
-            controller_name="${filename%.Controller.js}"
-
-            # Get the parent directory to determine test folder, but remove 'Controller' from the directory
-             controller_dir=$(dirname -- "$file" | sed 's#controllers/##' | sed 's#\.Controller##g')
-
+          # Map controller files to their corresponding test files
+          TEST_FILES=""
+          for file in $CHANGED_FILES; do
+            # Extract the parent directory and filename
+            directory=$(echo "$file" | sed -E 's|controller/([^/]*)\.Controller/.*|\1|')
+            filename=$(basename "$file" .Controller.js)
+            
             # Construct the test file path
-             test_file="tests/${controller_dir}.tests/${controller_name}.test.js"
-
-            echo "Controller: $file"
-            echo "Test File: $test_file"
-
-            # Check if the test file exists and run tests
+            test_file="tests/${directory}.tests/${filename}.test.js"
+            
+            # Check if the test file exists
             if [ -f "$test_file" ]; then
-              echo "Test found for $file, running test for $test_file"
-              npm test "$test_file" -- --silent --json
-              TEST_EXIT_CODE=$?
-              
-              if [ $TEST_EXIT_CODE -eq 0 ]; then
-                PASS_COUNT=$((PASS_COUNT+1))
-                echo "$test_file passed"
-              else
-                FAIL_COUNT=$((FAIL_COUNT+1))
-                FAILED_TESTS="$FAILED_TESTS\n$test_file failed"
-              fi
+              TEST_FILES="$TEST_FILES $test_file"
+              echo "Mapped $file -> $test_file"
             else
-              echo "No test file found for $file"
+              echo "Warning: No test file found for $file"
             fi
           done
 
-          # Summary of test results
-          echo "Summary of Tests:"
-          echo "Tests Passed: $PASS_COUNT"
-          echo "Tests Failed: $FAIL_COUNT"
-          
-          if [ $FAIL_COUNT -gt 0 ]; then
-            echo -e "Failed Tests: $FAILED_TESTS"
-            exit 1 # Fail the workflow if tests fail
-          else
-            echo "All tests passed!"
+          if [ -z "$TEST_FILES" ]; then
+            echo "No matching test files found for changed controllers."
+            echo "SKIP_TESTS=true" >> $GITHUB_ENV
+            exit 0
           fi
 
+          # Store the list of test files in GitHub env
+          echo "TEST_FILES<<EOF" >> $GITHUB_ENV
+          echo "$TEST_FILES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
+          # Also create JSON array for the comment
+          json_array=$(echo "$TEST_FILES" | tr ' ' '\n' | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/,$//')
+          echo "TEST_FILES_JSON=[$json_array]" >> $GITHUB_ENV
+
+      - name: Run tests for changed controllers
+        if: env.SKIP_TESTS != 'true'
+        id: run-tests
+        run: |
+          echo "🧪 Running tests for:"
+          echo "$TEST_FILES"
+          
+          # Initialize test results tracking
+          TEST_RESULTS=""
+          ALL_TESTS_PASSED=true
+          
+          # Run each test file individually to track results
+          for test_file in $TEST_FILES; do
+            echo "Testing: $test_file"
+            if npm test -- $test_file; then
+              TEST_RESULTS="$TEST_RESULTS\n✅ $test_file: PASSED"
+              echo "✅ $test_file: PASSED"
+            else
+              TEST_RESULTS="$TEST_RESULTS\n❌ $test_file: FAILED"
+              echo "❌ $test_file: FAILED"
+              ALL_TESTS_PASSED=false
+            fi
+          done
+          
+          # Save results to GitHub env
+          echo "TEST_RESULTS<<EOF" >> $GITHUB_ENV
+          echo -e "$TEST_RESULTS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          # Exit with failure if any tests failed
+          if [ "$ALL_TESTS_PASSED" = "false" ]; then
+            echo "Some tests failed!"
+            exit 1
+          fi
+          
+          echo "All tests passed!"
+      
+      - name: Post test results as comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const testFiles = process.env.TEST_FILES_JSON ? JSON.parse(process.env.TEST_FILES_JSON) : [];
+            const testResults = process.env.TEST_RESULTS ? process.env.TEST_RESULTS.split('\n').filter(line => line.trim()) : [];
+            const skipTests = process.env.SKIP_TESTS === 'true';
+            
+            let body = `## 🧪 Controller Test Results\n\n`;
+            
+            if (skipTests) {
+              body += `No controller files were changed in this PR, or no matching test files were found. Skipping tests.`;
+            } else if (testResults.length === 0) {
+              body += `No test results available. This might indicate an error in the test workflow.`;
+            } else {
+              body += `### Results\n\n`;
+              for (const result of testResults) {
+                body += `${result}\n`;
+              }
+              
+              // Add summary
+              const passedCount = testResults.filter(r => r.includes('✅')).length;
+              const failedCount = testResults.filter(r => r.includes('❌')).length;
+              
+              body += `\n### Summary\n`;
+              body += `- Total tests: ${testResults.length}\n`;
+              body += `- Passed: ${passedCount}\n`;
+              body += `- Failed: ${failedCount}\n`;
+              
+              if (failedCount > 0) {
+                body += `\n⚠️ Some tests failed. Please fix the issues before merging.`;
+              } else {
+                body += `\n✅ All tests passed!`;
+              }
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+      - name: Check if tests passed
+        if: env.SKIP_TESTS != 'true'
+        run: |
+          if echo "$TEST_RESULTS" | grep -q "❌"; then
+            echo "::error::Some tests failed! See test results in PR comments."
+            exit 1
+          fi
